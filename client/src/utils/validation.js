@@ -2,6 +2,26 @@ export function hasErrors(errors) {
   return Object.keys(errors).length > 0
 }
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+export function validateLoginForm(form) {
+  const errors = {}
+
+  if (!form.email?.trim()) {
+    errors.email = 'Email is required'
+  } else if (!EMAIL_PATTERN.test(form.email.trim())) {
+    errors.email = 'Invalid email address'
+  }
+
+  if (!form.password) {
+    errors.password = 'Password is required'
+  } else if (form.password.length < 6) {
+    errors.password = 'Password must be at least 6 characters'
+  }
+
+  return errors
+}
+
 export function validateCategoryForm(form) {
   const errors = {}
 

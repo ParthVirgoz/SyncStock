@@ -5,6 +5,7 @@ import cors from 'cors';
 import path from 'path';
 import { connectDb } from './src/database/db.js';
 
+import authRoutes from './src/modules/auth/auth.routes.js';
 import categoryRoutes from './src/modules/category/category.routes.js';
 import productRoutes from './src/modules/product/product.routes.js';
 import locationRoutes from './src/modules/location/location.routes.js';
@@ -38,6 +39,7 @@ app.get('/health', (req, res) => {
 });
 
 //Routes
+app.use('/auth', authRoutes);
 app.use('/categories', categoryRoutes);
 app.use('/products', productRoutes);
 app.use('/locations', locationRoutes);

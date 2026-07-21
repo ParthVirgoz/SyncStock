@@ -1,9 +1,20 @@
+import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../../store/useAppStore'
+import { useAuthStore } from '../../store/useAuthStore'
+import Button from '../ui/Button'
 
 export default function Topbar({ title }) {
+  const navigate = useNavigate()
   const setMobileSidebarOpen = useAppStore((s) => s.setMobileSidebarOpen)
   const toggleSidebar = useAppStore((s) => s.toggleSidebar)
   const apiConnected = useAppStore((s) => s.apiConnected)
+  const user = useAuthStore((s) => s.user)
+  const logout = useAuthStore((s) => s.logout)
+
+  function handleLogout() {
+    logout()
+    navigate('/login', { replace: true })
+  }
 
   return (
     <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 sm:h-16 sm:px-6">
@@ -38,7 +49,17 @@ export default function Topbar({ title }) {
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
+        {user?.email && (
+          <p className="hidden max-w-[180px] truncate text-sm text-slate-600 sm:block">
+            {user.email}
+          </p>
+        )}
+
+        <Button variant="secondary" size="sm" onClick={handleLogout}>
+          Logout
+        </Button>
+
         <span
           title={
             apiConnected === true

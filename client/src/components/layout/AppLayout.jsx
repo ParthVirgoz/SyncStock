@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
 import { checkHealth } from '../../api/health'
 import { useAppStore } from '../../store/useAppStore'
+import { useAuthStore } from '../../store/useAuthStore'
 import { getRouteMeta } from '../../routes/routeConfig'
 import Sidebar from './Sidebar'
 import Topbar from './Topbar'
@@ -14,6 +15,7 @@ export default function AppLayout() {
   const location = useLocation()
   const setApiStatus = useAppStore((s) => s.setApiStatus)
   const closeMobileSidebar = useAppStore((s) => s.closeMobileSidebar)
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const { title, breadcrumbs } = getRouteMeta(location.pathname)
 
   useEffect(() => {
@@ -21,7 +23,7 @@ export default function AppLayout() {
   }, [location.pathname, closeMobileSidebar])
 
   useEffect(() => {
-    if (healthCheckStarted) return
+    if (!isAuthenticated || healthCheckStarted) return
     healthCheckStarted = true
 
     let cancelled = false
@@ -50,7 +52,7 @@ export default function AppLayout() {
     return () => {
       cancelled = true
     }
-  }, [setApiStatus])
+  }, [isAuthenticated, setApiStatus])
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">

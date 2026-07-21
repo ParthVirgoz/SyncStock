@@ -1,6 +1,8 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import AppLayout from '../components/layout/AppLayout'
+import LoginPage from '../pages/LoginPage'
 import DashboardPage from '../pages/DashboardPage'
+import { GuestRoute, ProtectedRoute } from './ProtectedRoute'
 import CategoriesPage from '../pages/CategoriesPage'
 import ProductsPage from '../pages/ProductsPage'
 import LocationsPage from '../pages/LocationsPage'
@@ -13,8 +15,20 @@ import SaleOrdersPage from '../pages/SaleOrdersPage'
 
 export const router = createBrowserRouter([
   {
+    path: '/login',
+    element: (
+      <GuestRoute>
+        <LoginPage />
+      </GuestRoute>
+    ),
+  },
+  {
     path: '/',
-    element: <AppLayout />,
+    element: (
+      <ProtectedRoute>
+        <AppLayout />
+      </ProtectedRoute>
+    ),
     children: [
       { index: true, element: <DashboardPage /> },
       { path: 'categories', element: <CategoriesPage /> },

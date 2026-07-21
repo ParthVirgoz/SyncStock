@@ -1,13 +1,24 @@
-import { Router } from 'express';
-import bomController from './bom.controller.js';
-import { validateSchema } from './../../middlewares/schemaValidate.js';
-import { createBomSchema, updateBomSchema } from './bom.validation.js';
+import { Router } from "express";
+import bomController from "./bom.controller.js";
+import { validateSchema } from "./../../middlewares/schemaValidate.js";
+import { createBomSchema, updateBomSchema } from "./bom.validation.js";
+import authorization from "../../middlewares/auth.middleware.js";
 const router = Router();
 
-router.post('/', validateSchema(createBomSchema), bomController.addBOM);
+router.post(
+  "/",
+  authorization,
+  validateSchema(createBomSchema),
+  bomController.addBOM,
+);
 
-router.get('/:productId', bomController.getBOMByProduct);
+router.get("/:productId", authorization, bomController.getBOMByProduct);
 
-router.put('/:id', validateSchema(updateBomSchema), bomController.updateBOM);
+router.put(
+  "/:id",
+  authorization,
+  validateSchema(updateBomSchema),
+  bomController.updateBOM,
+);
 
 export default router;
