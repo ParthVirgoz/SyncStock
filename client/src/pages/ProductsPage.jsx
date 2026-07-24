@@ -63,6 +63,7 @@ export default function ProductsPage() {
   const [productTypes, setProductTypes] = useState([])
   const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState('')
+  const [imageRemoved, setImageRemoved] = useState(false)
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 350)
@@ -148,6 +149,11 @@ export default function ProductsPage() {
     setImagePreview('')
   }
 
+  function resetImageState() {
+    clearImagePreview()
+    setImageRemoved(false)
+  }
+
   function setExistingImagePreview(url = '') {
     if (imagePreview.startsWith('blob:')) {
       URL.revokeObjectURL(imagePreview)
@@ -160,7 +166,7 @@ export default function ProductsPage() {
     setEditingProduct(null)
     setForm(emptyForm)
     setErrors({})
-    clearImagePreview()
+    resetImageState()
     setModalOpen(true)
   }
 
@@ -174,6 +180,7 @@ export default function ProductsPage() {
       minStockLevel: product.minStockLevel ?? 0,
     })
     setErrors({})
+    setImageRemoved(false)
     setExistingImagePreview(product.image || '')
     setModalOpen(true)
   }
@@ -183,7 +190,7 @@ export default function ProductsPage() {
     setEditingProduct(null)
     setForm(emptyForm)
     setErrors({})
-    clearImagePreview()
+    resetImageState()
   }
 
   function closeDetailModal() {
@@ -224,11 +231,13 @@ export default function ProductsPage() {
 
     setImageFile(file)
     setImagePreview(URL.createObjectURL(file))
+    setImageRemoved(false)
     setErrors((current) => ({ ...current, productImage: undefined }))
   }
 
   function handleRemoveImage() {
     clearImagePreview()
+    setImageRemoved(true)
   }
 
   async function handleSubmit(event) {
@@ -249,6 +258,7 @@ export default function ProductsPage() {
         categoryId: form.categoryId,
         minStockLevel: Number(form.minStockLevel),
         productImage: imageFile,
+        removeImage: Boolean(editingProduct && imageRemoved && !imageFile),
       })
 
       if (editingProduct) {

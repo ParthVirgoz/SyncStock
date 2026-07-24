@@ -8,6 +8,10 @@ import {
 import { MESSAGES } from "../../common/constants/messages.js";
 import { destroyFile } from "../../common/utils/upload.js";
 
+function isTruthy(value) {
+  return value === true || value === "true" || value === 1 || value === "1";
+}
+
 const addNewProduct = async (req, res) => {
   try {
     const category = await categoryService.getCategoryById(req.body.categoryId);
@@ -154,13 +158,21 @@ const updateProduct = async (req, res) => {
     }
 
     const productImage = req.file ? (req.file.location ?? req.file.path) : null;
+    const shouldRemoveImage = isTruthy(bodyData.removeImage);
 
     if (productImage) {
       if (product.image) {
         await destroyFile(product.image);
       }
       bodyData.image = productImage;
+    } else if (shouldRemoveImage) {
+      if (product.image) {
+        await destroyFile(product.image);
+      }
+      bodyData.image = null;
     }
+
+    delete bodyData.removeImage;
 
     const updatedProduct = await productService.updateProduct(
       req.params.id,

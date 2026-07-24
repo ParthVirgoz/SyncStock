@@ -11,12 +11,6 @@ import Modal from '../components/ui/Modal'
 import NumberField from '../components/ui/NumberField'
 import SelectField from '../components/ui/SelectField'
 import StatusBadge from '../components/ui/StatusBadge'
-import { getProductTypes } from '../api/productTypes'
-import {
-  buildProductTypeOptions,
-  getProductTypeName,
-  resolveTypeId,
-} from '../utils/productTypeHelpers'
 import { hasErrors, validateInventoryAdjustForm } from '../utils/validation'
 
 const emptyAdjustForm = {
@@ -25,13 +19,11 @@ const emptyAdjustForm = {
   quantity: '',
 }
 
-function normalizeInventoryRow(item, productTypes = []) {
+function normalizeInventoryRow(item) {
   return {
     ...item,
     productName: item.productId?.name || '—',
     sku: item.productId?.sku || '—',
-    productType: getProductTypeName(item.productId, productTypes),
-    productTypeId: resolveTypeId(item.productId),
     locationName: item.locationId?.name || '—',
     locationType: item.locationId?.type || '',
     minStockLevel: item.productId?.minStockLevel ?? 0,
@@ -45,9 +37,7 @@ export default function InventoryPage() {
   const [locations, setLocations] = useState([])
   const [loading, setLoading] = useState(true)
   const [locationFilter, setLocationFilter] = useState('')
-  const [typeFilter, setTypeFilter] = useState('')
   const [lowStockOnly, setLowStockOnly] = useState(false)
-  const [productTypes, setProductTypes] = useState([])
 
   const [modalOpen, setModalOpen] = useState(false)
   const [form, setForm] = useState(emptyAdjustForm)
@@ -68,14 +58,12 @@ export default function InventoryPage() {
 
   const fetchFormOptions = useCallback(async () => {
     try {
-      const [productData, locationData, productTypeData] = await Promise.all([
+      const [productData, locationData] = await Promise.all([
         getProducts({ limit: 100 }),
         getLocations({ isActive: true }),
-        getProductTypes(),
       ])
       setProducts(Array.isArray(productData) ? productData : [])
       setLocations(Array.isArray(locationData) ? locationData : [])
-      setProductTypes(Array.isArray(productTypeData) ? productTypeData : [])
     } catch (error) {
       toast.error('Failed to load form options', { description: error.message })
     }
@@ -89,17 +77,11 @@ export default function InventoryPage() {
     fetchFormOptions()
   }, [fetchFormOptions])
 
-  const productTypeOptions = buildProductTypeOptions(productTypes)
-
   const tableRows = useMemo(() => {
-    let rows = inventory.map((item) => normalizeInventoryRow(item, productTypes))
+    let rows = inventory.map(normalizeInventoryRow)
 
     if (locationFilter) {
       rows = rows.filter((row) => row.locationId?._id === locationFilter)
-    }
-
-    if (typeFilter) {
-      rows = rows.filter((row) => row.productTypeId === typeFilter)
     }
 
     if (lowStockOnly) {
@@ -107,7 +89,7 @@ export default function InventoryPage() {
     }
 
     return rows
-  }, [inventory, locationFilter, typeFilter, lowStockOnly, productTypes])
+  }, [inventory, locationFilter, lowStockOnly])
 
   const lowStockCount = useMemo(
     () => inventory.filter((item) => item.quantity < (item.productId?.minStockLevel ?? 0)).length,
@@ -126,7 +108,7 @@ export default function InventoryPage() {
 
   const productOptions = products.map((product) => ({
     value: product._id,
-    label: `${product.name} (${getProductTypeName(product, productTypes) || product.sku})`,
+    label: `${product.name} (${product.sku})`,
   }))
 
   const locationFormOptions = locations.map((location) => ({
@@ -275,20 +257,6 @@ export default function InventoryPage() {
           >
             <option value="">All locations</option>
             {locationOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </FilterItem>
-        <FilterItem label="Product Type">
-          <select
-            value={typeFilter}
-            onChange={(event) => setTypeFilter(event.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
-          >
-            <option value="">All types</option>
-            {productTypeOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>

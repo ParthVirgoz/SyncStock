@@ -8,6 +8,7 @@ export function buildProductFormData({
   categoryId,
   minStockLevel,
   productImage,
+  removeImage = false,
 }) {
   const formData = new FormData()
   formData.append('name', name)
@@ -18,6 +19,10 @@ export function buildProductFormData({
 
   if (productImage) {
     formData.append('productImage', productImage)
+  }
+
+  if (removeImage) {
+    formData.append('removeImage', 'true')
   }
 
   return formData

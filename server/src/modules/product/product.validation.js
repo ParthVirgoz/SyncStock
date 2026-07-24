@@ -56,6 +56,10 @@ export const updateProductSchema = Joi.object({
     "number.base": "minStockLevel must be a number",
     "number.min": "minStockLevel cannot be negative",
   }),
+
+  removeImage: Joi.alternatives()
+    .try(Joi.boolean(), Joi.string().valid("true", "false", "1", "0"))
+    .optional(),
 })
   // .min(1)
   // .messages({
