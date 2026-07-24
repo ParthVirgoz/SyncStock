@@ -1,4 +1,4 @@
-import Category from './category.model.js';
+import Category from "./category.model.js";
 
 const addCategory = async (data) => {
   try {
@@ -12,7 +12,7 @@ const listCategory = async (isActive) => {
   try {
     let filter = {};
 
-    if (isActive === 'true') {
+    if (isActive === "true") {
       filter.isActive = true;
     }
 
@@ -38,9 +38,18 @@ const getCategoryById = async (id) => {
   }
 };
 
+const findCategoryByType = async (typeId) => {
+  try {
+    return await Category.findOne({ typeId });
+  } catch (error) {
+    throw new Error(`Error in findCategoryByType: ${error.message}`);
+  }
+};
+
 export default {
   addCategory,
   listCategory,
   updateCategory,
+  findCategoryByType,
   getCategoryById,
 };

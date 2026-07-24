@@ -76,5 +76,7 @@ export const MESSAGES = {
     PRODUCT_TYPE_INACTIVE: "This product type is not active.",
     PRODUCT_TYPE_ALREADY_EXISTS: "Product type already exists",
     PRODUCT_TYPE_CREATE_FAILED: "Failed to create product type",
+    PRODUCT_TYPE_HAS_CATEGORIES:
+      "Cannot delete product type as it has associated categories first change type of those categories to some other type.",
   },
 };

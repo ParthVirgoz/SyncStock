@@ -1,6 +1,5 @@
 import Joi from "joi";
 
-
 export const createProductSchema = Joi.object({
   name: Joi.string().trim().min(2).max(100).required().messages({
     "string.empty": "Name is required",
@@ -8,12 +7,10 @@ export const createProductSchema = Joi.object({
     "any.required": "Name is required",
   }),
 
-  unit: Joi.string()
-    .required()
-    .messages({
-      "any.only": "Unit must be kg, pcs or liters",
-      "any.required": "Unit is required",
-    }),
+  unit: Joi.string().required().messages({
+    "any.only": "Unit must be kg, pcs or liters",
+    "any.required": "Unit is required",
+  }),
 
   sku: Joi.string().trim().required().messages({
     "string.empty": "SKU is required",
@@ -37,11 +34,9 @@ export const updateProductSchema = Joi.object({
     "string.min": "Name must be at least 2 characters",
   }),
 
-  unit: Joi.string()
-    .optional()
-    .messages({
-      "any.only": "Unit must be kg, pcs or liters",
-    }),
+  unit: Joi.string().optional().messages({
+    "any.only": "Unit must be kg, pcs or liters",
+  }),
 
   sku: Joi.string().trim().optional().messages({
     "string.empty": "SKU cannot be empty",
@@ -61,7 +56,7 @@ export const updateProductSchema = Joi.object({
     .try(Joi.boolean(), Joi.string().valid("true", "false", "1", "0"))
     .optional(),
 })
-  // .min(1)
-  // .messages({
-  //   "object.min": "At least one field is required to update",
-  // });
+  .min(1)
+  .messages({
+    "object.min": "At least one field is required to update",
+  });

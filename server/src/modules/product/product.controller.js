@@ -219,6 +219,10 @@ const deleteProduct = async (req, res) => {
       );
     }
 
+    if (product.image) {
+      await destroyFile(product.image);
+    }
+
     return successResponse(
       req,
       res,

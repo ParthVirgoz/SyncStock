@@ -1,10 +1,10 @@
-import productTypeService from './productType.service.js';
-import httpStatus from 'http-status';
+import productTypeService from "./productType.service.js";
+import httpStatus from "http-status";
 import {
   errorResponse,
   successResponse,
-} from '../../common/utils/apiResponse.js';
-import { MESSAGES } from '../../common/constants/messages.js';
+} from "../../common/utils/apiResponse.js";
+import { MESSAGES } from "../../common/constants/messages.js";
 
 const addNewProductType = async (req, res) => {
   try {
@@ -145,9 +145,10 @@ const updateProductType = async (req, res) => {
 
 const deleteProductType = async (req, res) => {
   try {
-    const productType = await productTypeService.getProductTypeById(
-      req.params.id,
-    );
+    const [productType, categories] = await Promise.all([
+      productTypeService.getProductTypeById(req.params.id),
+      categoryService.listCategoriesByType(req.params.id),
+    ]);
 
     if (!productType) {
       return errorResponse(
@@ -155,6 +156,15 @@ const deleteProductType = async (req, res) => {
         res,
         httpStatus.NOT_FOUND,
         MESSAGES.ERROR.PRODUCT_TYPE_NOT_FOUND,
+      );
+    }
+
+    if (categories.length > 0) {
+      return errorResponse(
+        req,
+        res,
+        httpStatus.CONFLICT,
+        MESSAGES.ERROR.PRODUCT_TYPE_HAS_CATEGORIES,
       );
     }
 
