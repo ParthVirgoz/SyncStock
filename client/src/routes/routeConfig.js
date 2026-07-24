@@ -3,6 +3,14 @@ export const routeMeta = {
     title: 'Dashboard',
     breadcrumbs: [{ label: 'Home', path: '/' }],
   },
+  '/product-types': {
+    title: 'Product Types',
+    breadcrumbs: [
+      { label: 'Home', path: '/' },
+      { label: 'Master Data' },
+      { label: 'Product Types' },
+    ],
+  },
   '/categories': {
     title: 'Categories',
     breadcrumbs: [
@@ -84,6 +92,7 @@ export const navGroups = [
   {
     label: 'Master Data',
     items: [
+      { label: 'Product Types', path: '/product-types' },
       { label: 'Categories', path: '/categories' },
       { label: 'Products', path: '/products' },
       { label: 'Locations', path: '/locations' },

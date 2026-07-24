@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { createBom, getBomByProduct, updateBom } from '../api/bom'
 import { getProducts } from '../api/products'
+import { getProductTypes } from '../api/productTypes'
 import PageHeader from '../components/ui/PageHeader'
 import DataTable from '../components/ui/DataTable'
 import FilterBar, { FilterItem } from '../components/ui/FilterBar'
@@ -10,6 +11,11 @@ import Modal from '../components/ui/Modal'
 import SelectField from '../components/ui/SelectField'
 import MaterialRows from '../components/ui/MaterialRows'
 import StatusBadge from '../components/ui/StatusBadge'
+import {
+  getProductTypeBadgeStatus,
+  getProductTypeName,
+  matchProductTypeNames,
+} from '../utils/productTypeHelpers'
 import { hasErrors, validateBomForm } from '../utils/validation'
 
 const emptyForm = {
@@ -38,6 +44,7 @@ export default function BomPage() {
   const [form, setForm] = useState(emptyForm)
   const [errors, setErrors] = useState({})
   const [saving, setSaving] = useState(false)
+  const [productTypes, setProductTypes] = useState([])
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -71,27 +78,46 @@ export default function BomPage() {
   }, [fetchProducts])
 
   useEffect(() => {
+    async function fetchProductTypes() {
+      try {
+        const data = await getProductTypes()
+        setProductTypes(Array.isArray(data) ? data : [])
+      } catch (error) {
+        toast.error('Failed to load product types', { description: error.message })
+      }
+    }
+
+    fetchProductTypes()
+  }, [])
+
+  useEffect(() => {
     fetchBoms()
   }, [fetchBoms])
 
   const finishedProducts = useMemo(
-    () => products.filter((product) => ['FINISHED', 'SEMI'].includes(product.type)),
-    [products],
+    () =>
+      products.filter((product) =>
+        matchProductTypeNames(product, ['FINISHED', 'SEMI'], productTypes),
+      ),
+    [products, productTypes],
   )
 
   const materialProducts = useMemo(
-    () => products.filter((product) => ['RAW', 'SEMI'].includes(product.type)),
-    [products],
+    () =>
+      products.filter((product) =>
+        matchProductTypeNames(product, ['RAW', 'SEMI'], productTypes),
+      ),
+    [products, productTypes],
   )
 
   const finishedProductOptions = finishedProducts.map((product) => ({
     value: product._id,
-    label: `${product.name} (${product.type})`,
+    label: `${product.name} (${getProductTypeName(product, productTypes)})`,
   }))
 
   const materialProductOptions = materialProducts.map((product) => ({
     value: product._id,
-    label: `${product.name} (${product.sku})`,
+    label: `${product.name} (${getProductTypeName(product, productTypes)})`,
   }))
 
   const selectedProduct = finishedProducts.find(
@@ -252,7 +278,10 @@ export default function BomPage() {
         {selectedProduct && (
           <FilterItem label="Selected Product">
             <div className="flex h-[42px] items-center">
-              <StatusBadge status={selectedProduct.type} />
+              <StatusBadge
+                status={getProductTypeBadgeStatus(selectedProduct, productTypes)}
+                label={getProductTypeName(selectedProduct, productTypes)}
+              />
             </div>
           </FilterItem>
         )}

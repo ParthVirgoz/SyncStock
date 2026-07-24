@@ -1,15 +1,17 @@
-import productService from './product.service.js';
-import categoryService from '../category/category.service.js';
-import httpStatus from 'http-status';
+import productService from "./product.service.js";
+import categoryService from "../category/category.service.js";
+import httpStatus from "http-status";
 import {
   errorResponse,
   successResponse,
-} from '../../common/utils/apiResponse.js';
-import { MESSAGES } from '../../common/constants/messages.js';
+} from "../../common/utils/apiResponse.js";
+import { MESSAGES } from "../../common/constants/messages.js";
+import { destroyFile } from "../../common/utils/upload.js";
 
 const addNewProduct = async (req, res) => {
   try {
     const category = await categoryService.getCategoryById(req.body.categoryId);
+    const productImage = req.file ? (req.file.location ?? req.file.path) : null;
 
     if (!category) {
       return errorResponse(
@@ -29,7 +31,11 @@ const addNewProduct = async (req, res) => {
       );
     }
 
-    const product = await productService.createProduct(req.body);
+    const product = await productService.createProduct({
+      ...req.body,
+      image: productImage,
+      typeId: category.typeId,
+    });
 
     if (!product) {
       return errorResponse(
@@ -73,7 +79,7 @@ const getProducts = async (req, res) => {
       req,
       res,
       httpStatus.OK,
-      MESSAGES.SUCCESS.PRODUCT_CREATED.replace('created', 'retrieved'),
+      MESSAGES.SUCCESS.PRODUCT_CREATED.replace("created", "retrieved"),
       result,
     );
   } catch (error) {
@@ -104,7 +110,7 @@ const getProductById = async (req, res) => {
       req,
       res,
       httpStatus.OK,
-      'Product retrieved successfully.',
+      "Product retrieved successfully.",
       product,
     );
   } catch (error) {
@@ -120,7 +126,18 @@ const getProductById = async (req, res) => {
 
 const updateProduct = async (req, res) => {
   try {
-    if (req.body.categoryId) {
+    const bodyData = req.body;
+    const product = await productService.getProductById(req.params.id);
+
+    if (!product) {
+      return errorResponse(
+        req,
+        res,
+        httpStatus.NOT_FOUND,
+        MESSAGES.ERROR.PRODUCT_NOT_FOUND,
+      );
+    }
+    if (bodyData?.categoryId) {
       const category = await categoryService.getCategoryById(
         req.body.categoryId,
       );
@@ -133,11 +150,24 @@ const updateProduct = async (req, res) => {
           MESSAGES.ERROR.CATEGORY_NOT_FOUND,
         );
       }
+      bodyData.typeId = category.typeId;
     }
 
-    const product = await productService.updateProduct(req.params.id, req.body);
+    const productImage = req.file ? (req.file.location ?? req.file.path) : null;
 
-    if (!product) {
+    if (productImage) {
+      if (product.image) {
+        await destroyFile(product.image);
+      }
+      bodyData.image = productImage;
+    }
+
+    const updatedProduct = await productService.updateProduct(
+      req.params.id,
+      bodyData,
+    );
+
+    if (!updatedProduct) {
       return errorResponse(
         req,
         res,
@@ -150,8 +180,8 @@ const updateProduct = async (req, res) => {
       req,
       res,
       httpStatus.OK,
-      'Product updated successfully.',
-      product,
+      "Product updated successfully.",
+      updatedProduct,
     );
   } catch (error) {
     console.error(error);

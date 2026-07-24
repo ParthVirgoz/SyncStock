@@ -1,4 +1,5 @@
-import jwt from 'jsonwebtoken';
+import jwt from "jsonwebtoken";
+import { CONFIG } from "../../config/config.js";
 
 export const generateToken = async (user, expTime) => {
   const payload = {
@@ -6,8 +7,8 @@ export const generateToken = async (user, expTime) => {
     email: user.email,
   };
 
-  const token = jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: expTime || process.env.JWT_EXP,
+  const token = jwt.sign(payload, CONFIG.jwtSecretKey, {
+    expiresIn: expTime || CONFIG.jwtExp,
   });
 
   const tokenExp = await getDecodeData(token);

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { getCategories } from '../api/categories'
 import {
+  buildProductFormData,
   createProduct,
   deleteProduct,
   getProductById,
@@ -18,14 +19,21 @@ import NumberField from '../components/ui/NumberField'
 import SelectField, { EnumSelect } from '../components/ui/SelectField'
 import StatusBadge from '../components/ui/StatusBadge'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
-import { PRODUCT_TYPES, PRODUCT_UNITS } from '../constants/enums'
+import ImagePreview from '../components/ui/ImagePreview'
+import { getProductTypes } from '../api/productTypes'
+import { PRODUCT_UNITS } from '../constants/enums'
+import {
+  buildProductTypeOptions,
+  getProductTypeBadgeStatus,
+  getProductTypeName,
+} from '../utils/productTypeHelpers'
 import { hasErrors, validateProductForm } from '../utils/validation'
 
 const PAGE_SIZE = 10
+const ACCEPTED_IMAGE_TYPES = 'image/jpeg,image/png,image/webp,image/jpg'
 
 const emptyForm = {
   name: '',
-  type: '',
   unit: '',
   sku: '',
   categoryId: '',
@@ -52,6 +60,9 @@ export default function ProductsPage() {
   const [saving, setSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const [productTypes, setProductTypes] = useState([])
+  const [imageFile, setImageFile] = useState(null)
+  const [imagePreview, setImagePreview] = useState('')
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 350)
@@ -98,18 +109,58 @@ export default function ProductsPage() {
   }, [fetchCategories])
 
   useEffect(() => {
+    async function fetchProductTypes() {
+      try {
+        const data = await getProductTypes()
+        setProductTypes(Array.isArray(data) ? data : [])
+      } catch (error) {
+        toast.error('Failed to load product types', { description: error.message })
+      }
+    }
+
+    fetchProductTypes()
+  }, [])
+
+  useEffect(() => {
     fetchProducts()
   }, [fetchProducts])
 
+  useEffect(() => {
+    return () => {
+      if (imagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview)
+      }
+    }
+  }, [imagePreview])
+
+  const productTypeOptions = buildProductTypeOptions(productTypes)
+
   const categoryOptions = categories.map((category) => ({
     value: category._id,
-    label: `${category.name} (${category.type})`,
+    label: `${category.name} (${getProductTypeName(category, productTypes)})`,
   }))
+
+  function clearImagePreview() {
+    if (imagePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreview)
+    }
+    setImageFile(null)
+    setImagePreview('')
+  }
+
+  function setExistingImagePreview(url = '') {
+    if (imagePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreview)
+    }
+    setImageFile(null)
+    setImagePreview(url)
+  }
 
   function openCreateModal() {
     setEditingProduct(null)
     setForm(emptyForm)
     setErrors({})
+    clearImagePreview()
     setModalOpen(true)
   }
 
@@ -117,13 +168,13 @@ export default function ProductsPage() {
     setEditingProduct(product)
     setForm({
       name: product.name || '',
-      type: product.type || '',
       unit: product.unit || '',
       sku: product.sku || '',
       categoryId: product.categoryId?._id || product.categoryId || '',
       minStockLevel: product.minStockLevel ?? 0,
     })
     setErrors({})
+    setExistingImagePreview(product.image || '')
     setModalOpen(true)
   }
 
@@ -132,6 +183,12 @@ export default function ProductsPage() {
     setEditingProduct(null)
     setForm(emptyForm)
     setErrors({})
+    clearImagePreview()
+  }
+
+  function closeDetailModal() {
+    setDetailOpen(false)
+    setDetailProduct(null)
   }
 
   async function openDetailModal(product) {
@@ -157,6 +214,23 @@ export default function ProductsPage() {
     }
   }
 
+  function handleImageChange(event) {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    if (imagePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreview)
+    }
+
+    setImageFile(file)
+    setImagePreview(URL.createObjectURL(file))
+    setErrors((current) => ({ ...current, productImage: undefined }))
+  }
+
+  function handleRemoveImage() {
+    clearImagePreview()
+  }
+
   async function handleSubmit(event) {
     event.preventDefault()
 
@@ -168,20 +242,20 @@ export default function ProductsPage() {
 
     setSaving(true)
     try {
-      const payload = {
+      const formData = buildProductFormData({
         name: form.name.trim(),
-        type: form.type,
         unit: form.unit,
         sku: form.sku.trim(),
         categoryId: form.categoryId,
         minStockLevel: Number(form.minStockLevel),
-      }
+        productImage: imageFile,
+      })
 
       if (editingProduct) {
-        await updateProduct(editingProduct._id, payload)
+        await updateProduct(editingProduct._id, formData)
         toast.success('Product updated successfully')
       } else {
-        await createProduct(payload)
+        await createProduct(formData)
         toast.success('Product created successfully')
       }
 
@@ -219,6 +293,12 @@ export default function ProductsPage() {
 
   const columns = [
     {
+      key: 'image',
+      label: 'Image',
+      sortable: false,
+      render: (_, row) => <ImagePreview src={row.image} alt={row.name} />,
+    },
+    {
       key: 'name',
       label: 'Product',
       sortable: true,
@@ -230,10 +310,15 @@ export default function ProductsPage() {
       sortable: true,
     },
     {
-      key: 'type',
-      label: 'Type',
+      key: 'typeId',
+      label: 'Product Type',
       sortable: true,
-      render: (value) => <StatusBadge status={value} />,
+      render: (_, row) => (
+        <StatusBadge
+          status={getProductTypeBadgeStatus(row, productTypes)}
+          label={getProductTypeName(row, productTypes) || '—'}
+        />
+      ),
     },
     {
       key: 'unit',
@@ -275,7 +360,7 @@ export default function ProductsPage() {
     <div>
       <PageHeader
         title="Products"
-        description="Manage your product catalog with SKU, units, and stock thresholds."
+        description="Manage product catalog with SKU, images, units, and stock thresholds."
         action={
           <Button onClick={openCreateModal} className="w-full sm:w-auto">
             Add Product
@@ -293,16 +378,16 @@ export default function ProductsPage() {
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
           />
         </FilterItem>
-        <FilterItem label="Type">
+        <FilterItem label="Product Type">
           <select
             value={typeFilter}
             onChange={(event) => setTypeFilter(event.target.value)}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
           >
             <option value="">All types</option>
-            {PRODUCT_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {type}
+            {productTypeOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
               </option>
             ))}
           </select>
@@ -327,7 +412,7 @@ export default function ProductsPage() {
         open={modalOpen}
         onClose={closeModal}
         title={editingProduct ? 'Edit Product' : 'Add Product'}
-        description="Define product details and minimum stock level."
+        description="Product type is derived from the selected category. Image upload is optional."
         size="lg"
         footer={
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
@@ -359,15 +444,6 @@ export default function ProductsPage() {
               error={errors.sku}
             />
             <EnumSelect
-              label="Type"
-              name="type"
-              value={form.type}
-              onChange={handleChange('type')}
-              enumValues={PRODUCT_TYPES}
-              required
-              error={errors.type}
-            />
-            <EnumSelect
               label="Unit"
               name="unit"
               value={form.unit}
@@ -396,15 +472,43 @@ export default function ProductsPage() {
               error={errors.minStockLevel}
             />
           </div>
+
+          <div className="space-y-2 rounded-lg border border-slate-200 p-4">
+            <label htmlFor="productImage" className="block text-sm font-medium text-slate-700">
+              Product Image
+            </label>
+            <input
+              id="productImage"
+              name="productImage"
+              type="file"
+              accept={ACCEPTED_IMAGE_TYPES}
+              onChange={handleImageChange}
+              disabled={saving}
+              className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-brand-700 hover:file:bg-brand-100"
+            />
+            <p className="text-xs text-slate-500">JPEG, PNG, or WebP. Optional.</p>
+            {errors.productImage && (
+              <p className="text-xs text-red-600">{errors.productImage}</p>
+            )}
+            {imagePreview && (
+              <div className="flex items-start gap-3 pt-2">
+                <ImagePreview
+                  src={imagePreview}
+                  alt="Product preview"
+                  className="h-24 w-24"
+                />
+                <Button type="button" variant="ghost" size="sm" onClick={handleRemoveImage}>
+                  Remove image
+                </Button>
+              </div>
+            )}
+          </div>
         </form>
       </Modal>
 
       <Modal
         open={detailOpen}
-        onClose={() => {
-          setDetailOpen(false)
-          setDetailProduct(null)
-        }}
+        onClose={closeDetailModal}
         title="Product Details"
         description="Full product information from the system."
         size="lg"
@@ -434,22 +538,39 @@ export default function ProductsPage() {
             ))}
           </div>
         ) : detailProduct ? (
-          <dl className="grid gap-4 sm:grid-cols-2">
-            <DetailItem label="Name" value={detailProduct.name} />
-            <DetailItem label="SKU" value={detailProduct.sku} />
-            <DetailItem label="Type" value={<StatusBadge status={detailProduct.type} />} />
-            <DetailItem label="Unit" value={detailProduct.unit} />
-            <DetailItem
-              label="Category"
-              value={detailProduct.categoryId?.name || '—'}
-            />
-            <DetailItem label="Min Stock Level" value={detailProduct.minStockLevel} />
-            <DetailItem
-              label="Created"
-              value={new Date(detailProduct.createdAt).toLocaleString()}
-              className="sm:col-span-2"
-            />
-          </dl>
+          <div className="space-y-4">
+            {detailProduct.image && (
+              <ImagePreview
+                src={detailProduct.image}
+                alt={detailProduct.name}
+                className="h-32 w-32"
+              />
+            )}
+            <dl className="grid gap-4 sm:grid-cols-2">
+              <DetailItem label="Name" value={detailProduct.name} />
+              <DetailItem label="SKU" value={detailProduct.sku} />
+              <DetailItem
+                label="Product Type"
+                value={
+                  <StatusBadge
+                    status={getProductTypeBadgeStatus(detailProduct, productTypes)}
+                    label={getProductTypeName(detailProduct, productTypes) || '—'}
+                  />
+                }
+              />
+              <DetailItem label="Unit" value={detailProduct.unit} />
+              <DetailItem
+                label="Category"
+                value={detailProduct.categoryId?.name || '—'}
+              />
+              <DetailItem label="Min Stock Level" value={detailProduct.minStockLevel} />
+              <DetailItem
+                label="Created"
+                value={new Date(detailProduct.createdAt).toLocaleString()}
+                className="sm:col-span-2"
+              />
+            </dl>
+          </div>
         ) : null}
       </Modal>
 

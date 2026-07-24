@@ -12,11 +12,18 @@ import Button from '../components/ui/Button'
 import Modal from '../components/ui/Modal'
 import TextField from '../components/ui/TextField'
 import TextAreaField from '../components/ui/TextAreaField'
-import { EnumSelect } from '../components/ui/SelectField'
+import SelectField from '../components/ui/SelectField'
 import ToggleSwitch from '../components/ui/ToggleSwitch'
 import StatusBadge from '../components/ui/StatusBadge'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
-import { CATEGORY_TYPES } from '../constants/enums'
+import { getProductTypes } from '../api/productTypes'
+import {
+  buildProductTypeOptions,
+  getProductTypeBadgeStatus,
+  getProductTypeName,
+  matchProductTypeFilter,
+  resolveTypeId,
+} from '../utils/productTypeHelpers'
 import {
   filterByActiveStatus,
   hasErrors,
@@ -25,7 +32,7 @@ import {
 
 const emptyForm = {
   name: '',
-  type: '',
+  typeId: '',
   description: '',
   isActive: true,
 }
@@ -42,6 +49,22 @@ export default function CategoriesPage() {
   const [saving, setSaving] = useState(false)
   const [toggleTarget, setToggleTarget] = useState(null)
   const [toggleLoading, setToggleLoading] = useState(false)
+  const [productTypes, setProductTypes] = useState([])
+  const [productTypesLoading, setProductTypesLoading] = useState(true)
+
+  const productTypeOptions = useMemo(
+    () => buildProductTypeOptions(productTypes),
+    [productTypes],
+  )
+
+  const categoriesWithTypeName = useMemo(
+    () =>
+      categories.map((category) => ({
+        ...category,
+        productTypeName: getProductTypeName(category, productTypes),
+      })),
+    [categories, productTypes],
+  )
 
   const fetchCategories = useCallback(async () => {
     setLoading(true)
@@ -60,17 +83,40 @@ export default function CategoriesPage() {
     fetchCategories()
   }, [fetchCategories])
 
+  const fetchProductTypes = useCallback(async () => {
+    setProductTypesLoading(true)
+    try {
+      const data = await getProductTypes()
+      setProductTypes(Array.isArray(data) ? data : [])
+    } catch (error) {
+      toast.error('Failed to load product types', { description: error.message })
+    } finally {
+      setProductTypesLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchProductTypes()
+  }, [fetchProductTypes])
+
   const filteredCategories = useMemo(() => {
-    let rows = filterByActiveStatus(categories, statusFilter)
+    let rows = filterByActiveStatus(categoriesWithTypeName, statusFilter)
 
     if (typeFilter) {
-      rows = rows.filter((item) => item.type === typeFilter)
+      rows = rows.filter((item) => matchProductTypeFilter(item, typeFilter, productTypes))
     }
 
     return rows
-  }, [categories, statusFilter, typeFilter])
+  }, [categoriesWithTypeName, statusFilter, typeFilter, productTypes])
 
   function openCreateModal() {
+    if (!productTypeOptions.length) {
+      toast.error('No product types available', {
+        description: 'Create RAW, SEMI, and FINISHED types under Product Types first.',
+      })
+      return
+    }
+
     setEditingCategory(null)
     setForm(emptyForm)
     setErrors({})
@@ -81,7 +127,7 @@ export default function CategoriesPage() {
     setEditingCategory(category)
     setForm({
       name: category.name || '',
-      type: category.type || '',
+      typeId: resolveTypeId(category),
       description: category.description || '',
       isActive: category.isActive !== false,
     })
@@ -118,7 +164,7 @@ export default function CategoriesPage() {
     try {
       const payload = {
         name: form.name.trim(),
-        type: form.type,
+        typeId: form.typeId,
         description: form.description.trim(),
         isActive: form.isActive,
       }
@@ -168,10 +214,15 @@ export default function CategoriesPage() {
       render: (value) => <span className="font-medium text-slate-900">{value}</span>,
     },
     {
-      key: 'type',
-      label: 'Type',
+      key: 'productTypeName',
+      label: 'Product Type',
       sortable: true,
-      render: (value) => <StatusBadge status={value} />,
+      render: (value, row) => (
+        <StatusBadge
+          status={getProductTypeBadgeStatus(row, productTypes)}
+          label={value || '—'}
+        />
+      ),
     },
     {
       key: 'description',
@@ -217,13 +268,25 @@ export default function CategoriesPage() {
     <div>
       <PageHeader
         title="Categories"
-        description="Organize products by RAW, SEMI, and FINISHED types."
+        description="Group products under categories linked to a product type."
         action={
-          <Button onClick={openCreateModal} className="w-full sm:w-auto">
+          <Button
+            onClick={openCreateModal}
+            className="w-full sm:w-auto"
+            disabled={productTypesLoading || productTypeOptions.length === 0}
+          >
             Add Category
           </Button>
         }
       />
+
+      {!productTypesLoading && productTypeOptions.length === 0 && (
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Create product types first under{' '}
+          <span className="font-medium">Master Data → Product Types</span> before adding
+          categories.
+        </div>
+      )}
 
       <FilterBar>
         <FilterItem label="Status">
@@ -237,16 +300,17 @@ export default function CategoriesPage() {
             <option value="inactive">Inactive</option>
           </select>
         </FilterItem>
-        <FilterItem label="Type">
+        <FilterItem label="Product Type">
           <select
             value={typeFilter}
             onChange={(event) => setTypeFilter(event.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
+            disabled={productTypesLoading}
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 disabled:bg-slate-100"
           >
             <option value="">All types</option>
-            {CATEGORY_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {type}
+            {productTypeOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
               </option>
             ))}
           </select>
@@ -258,7 +322,7 @@ export default function CategoriesPage() {
         data={filteredCategories}
         loading={loading}
         searchPlaceholder="Search categories..."
-        searchKeys={['name', 'type', 'description']}
+        searchKeys={['name', 'description', 'productTypeName']}
         emptyTitle="No categories found"
         emptyDescription="Create your first category to get started."
       />
@@ -267,7 +331,7 @@ export default function CategoriesPage() {
         open={modalOpen}
         onClose={closeModal}
         title={editingCategory ? 'Edit Category' : 'Add Category'}
-        description="Define category name, type, and availability."
+        description="Link each category to a product type and set its availability."
         footer={
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <Button variant="secondary" onClick={closeModal} disabled={saving}>
@@ -289,15 +353,16 @@ export default function CategoriesPage() {
             required
             error={errors.name}
           />
-          <EnumSelect
-            label="Type"
-            name="type"
-            value={form.type}
-            onChange={handleChange('type')}
-            enumValues={CATEGORY_TYPES}
-            placeholder="Select type"
+          <SelectField
+            label="Product Type"
+            name="typeId"
+            value={form.typeId}
+            onChange={handleChange('typeId')}
+            options={productTypeOptions}
+            placeholder={productTypesLoading ? 'Loading product types...' : 'Select product type'}
             required
-            error={errors.type}
+            disabled={productTypesLoading}
+            error={errors.typeId}
           />
           <TextAreaField
             label="Description"

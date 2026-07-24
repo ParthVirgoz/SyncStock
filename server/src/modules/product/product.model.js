@@ -1,4 +1,4 @@
-import { Schema, model } from 'mongoose';
+import { Schema, model } from "mongoose";
 
 const productSchema = new Schema(
   {
@@ -7,15 +7,14 @@ const productSchema = new Schema(
       required: true,
     },
 
-    type: {
-      type: String,
-      enum: ['FINISHED', 'RAW', 'SEMI'],
-      required: true,
+    typeId: {
+      type: Schema.Types.ObjectId,
+      ref: "productType",
+      default: null,
     },
 
     unit: {
       type: String,
-      enum: ['kg', 'pcs', 'liters'],
       required: true,
     },
 
@@ -24,9 +23,14 @@ const productSchema = new Schema(
       required: true,
     },
 
+    image: {
+      type: String,
+      default: null,
+    },
+
     categoryId: {
       type: Schema.Types.ObjectId,
-      ref: 'category',
+      ref: "category",
     },
 
     minStockLevel: {
@@ -38,6 +42,6 @@ const productSchema = new Schema(
   { timestamps: true },
 );
 
-const Product = model('product', productSchema);
+const Product = model("product", productSchema);
 
 export default Product;

@@ -62,6 +62,7 @@ export function calculateInventoryStats(inventory = [], priceMap = new Map()) {
       lowStockCount += 1
       lowStockItems.push({
         _id: item._id,
+        productId: item.productId,
         productName: item.productId?.name || 'Unknown',
         sku: item.productId?.sku || '—',
         locationName: item.locationId?.name || '—',

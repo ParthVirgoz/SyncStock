@@ -15,6 +15,8 @@ import productionRoutes from './src/modules/production/production.routes.js';
 import supplierRoutes from './src/modules/supplier/supplier.routes.js';
 import purchaseOrderRoutes from './src/modules/purchaseOrder/purchaseOrder.routes.js';
 import saleOrderRoutes from './src/modules/saleOrder/saleOrder.routes.js';
+import productTypeRoutes from './src/modules/productType/productType.routes.js';
+import { CONFIG } from './src/config/config.js';
 
 connectDb();
 
@@ -49,13 +51,14 @@ app.use('/production-orders', productionRoutes);
 app.use('/purchase-orders', purchaseOrderRoutes);
 app.use('/suppliers', supplierRoutes);
 app.use('/sale-orders', saleOrderRoutes);
+app.use('/productTypes', productTypeRoutes);
 
 process.on('unhandledRejection', (err) => {
   console.error('❌ Unhandled rejection:', err.message);
 });
 
-app.listen(process.env.PORT, (req, res) => {
-  console.log(`Server running on port ${process.env.PORT}`);
+app.listen(CONFIG.port, (req, res) => {
+  console.log(`Server running on port ${CONFIG.port}`);
 });
 
 process.on('uncaughtException', (err) => {

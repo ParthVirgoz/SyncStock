@@ -1,82 +1,63 @@
-import Joi from 'joi';
+import Joi from "joi";
 
-const PRODUCT_TYPES = ['FINISHED', 'RAW', 'SEMI'];
-const PRODUCT_UNITS = ['kg', 'pcs', 'liters'];
 
 export const createProductSchema = Joi.object({
   name: Joi.string().trim().min(2).max(100).required().messages({
-    'string.empty': 'Name is required',
-    'string.min': 'Name must be at least 2 characters',
-    'any.required': 'Name is required',
+    "string.empty": "Name is required",
+    "string.min": "Name must be at least 2 characters",
+    "any.required": "Name is required",
   }),
 
-  type: Joi.string()
-    .valid(...PRODUCT_TYPES)
-    .required()
-    .messages({
-      'any.only': 'Type must be FINISHED, RAW or SEMI',
-      'any.required': 'Type is required',
-    }),
-
   unit: Joi.string()
-    .valid(...PRODUCT_UNITS)
     .required()
     .messages({
-      'any.only': 'Unit must be kg, pcs or liters',
-      'any.required': 'Unit is required',
+      "any.only": "Unit must be kg, pcs or liters",
+      "any.required": "Unit is required",
     }),
 
   sku: Joi.string().trim().required().messages({
-    'string.empty': 'SKU is required',
-    'any.required': 'SKU is required',
+    "string.empty": "SKU is required",
+    "any.required": "SKU is required",
   }),
 
   categoryId: Joi.string().length(24).hex().optional().messages({
-    'string.length': 'Invalid categoryId',
-    'string.hex': 'Invalid categoryId',
+    "string.length": "Invalid categoryId",
+    "string.hex": "Invalid categoryId",
   }),
 
   minStockLevel: Joi.number().min(0).required().messages({
-    'number.base': 'minStockLevel must be a number',
-    'number.min': 'minStockLevel cannot be negative',
-    'any.required': 'minStockLevel is required',
+    "number.base": "minStockLevel must be a number",
+    "number.min": "minStockLevel cannot be negative",
+    "any.required": "minStockLevel is required",
   }),
 });
 
 export const updateProductSchema = Joi.object({
   name: Joi.string().trim().min(2).max(100).optional().messages({
-    'string.min': 'Name must be at least 2 characters',
+    "string.min": "Name must be at least 2 characters",
   }),
 
-  type: Joi.string()
-    .valid(...PRODUCT_TYPES)
-    .optional()
-    .messages({
-      'any.only': 'Type must be FINISHED, RAW or SEMI',
-    }),
-
   unit: Joi.string()
-    .valid(...PRODUCT_UNITS)
     .optional()
     .messages({
-      'any.only': 'Unit must be kg, pcs or liters',
+      "any.only": "Unit must be kg, pcs or liters",
     }),
 
   sku: Joi.string().trim().optional().messages({
-    'string.empty': 'SKU cannot be empty',
+    "string.empty": "SKU cannot be empty",
   }),
 
   categoryId: Joi.string().length(24).hex().optional().messages({
-    'string.length': 'Invalid categoryId',
-    'string.hex': 'Invalid categoryId',
+    "string.length": "Invalid categoryId",
+    "string.hex": "Invalid categoryId",
   }),
 
   minStockLevel: Joi.number().min(0).optional().messages({
-    'number.base': 'minStockLevel must be a number',
-    'number.min': 'minStockLevel cannot be negative',
+    "number.base": "minStockLevel must be a number",
+    "number.min": "minStockLevel cannot be negative",
   }),
 })
-  .min(1)
-  .messages({
-    'object.min': 'At least one field is required to update',
-  });
+  // .min(1)
+  // .messages({
+  //   "object.min": "At least one field is required to update",
+  // });

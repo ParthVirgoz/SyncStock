@@ -3,6 +3,7 @@ import AppLayout from '../components/layout/AppLayout'
 import LoginPage from '../pages/LoginPage'
 import DashboardPage from '../pages/DashboardPage'
 import { GuestRoute, ProtectedRoute } from './ProtectedRoute'
+import ProductTypesPage from '../pages/ProductTypesPage'
 import CategoriesPage from '../pages/CategoriesPage'
 import ProductsPage from '../pages/ProductsPage'
 import LocationsPage from '../pages/LocationsPage'
@@ -31,6 +32,7 @@ export const router = createBrowserRouter([
     ),
     children: [
       { index: true, element: <DashboardPage /> },
+      { path: 'product-types', element: <ProductTypesPage /> },
       { path: 'categories', element: <CategoriesPage /> },
       { path: 'products', element: <ProductsPage /> },
       { path: 'locations', element: <LocationsPage /> },

@@ -6,11 +6,13 @@ import {
   updateProductSchema,
 } from "./product.validation.js";
 import authorization from "../../middlewares/auth.middleware.js";
+import { upload } from "../../common/utils/upload.js";
 const router = Router();
 
 router.post(
   "/",
   authorization,
+  upload.single("productImage"),
   validateSchema(createProductSchema),
   productController.addNewProduct,
 );
@@ -22,6 +24,7 @@ router.get("/:id", authorization, productController.getProductById);
 router.put(
   "/:id",
   authorization,
+  upload.single("productImage"),
   validateSchema(updateProductSchema),
   productController.updateProduct,
 );

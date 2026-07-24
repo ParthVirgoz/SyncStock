@@ -1,4 +1,4 @@
-import { Schema, model } from 'mongoose';
+import { Schema, model } from "mongoose";
 
 const categorySchema = new Schema(
   {
@@ -7,9 +7,9 @@ const categorySchema = new Schema(
       required: true,
     },
 
-    type: {
-      type: String,
-      enum: ['RAW', 'FINISHED', 'SEMI'],
+    typeId: {
+      type: Schema.Types.ObjectId,
+      ref: "productType",
       required: true,
     },
 
@@ -26,6 +26,6 @@ const categorySchema = new Schema(
   { timestamps: true },
 );
 
-const Category = model('category', categorySchema);
+const Category = model("category", categorySchema);
 
 export default Category;

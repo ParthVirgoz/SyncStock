@@ -1,6 +1,5 @@
-export const CATEGORY_TYPES = ['RAW', 'SEMI', 'FINISHED']
-
-export const PRODUCT_TYPES = ['RAW', 'SEMI', 'FINISHED']
+// Product/category types are loaded from GET /productTypes.
+// Use client/src/api/productTypes.js and client/src/utils/productTypeHelpers.js.
 
 export const PRODUCT_UNITS = ['kg', 'pcs', 'liters']
 

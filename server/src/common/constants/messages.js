@@ -29,6 +29,10 @@ export const MESSAGES = {
     SUPPLIER_LIST: "All supplier fetched successfully.",
     SALE_ORDER_ADD: "Sale order added successfully.",
     SALE_ORDER_LIST: "All sale order fetched successfully.",
+    PRODUCT_TYPE_CREATED: "Product type created successfully",
+    PRODUCT_TYPE_FETCHED: "Product type(s) fetched successfully",
+    PRODUCT_TYPE_UPDATED: "Product type updated successfully",
+    PRODUCT_TYPE_DELETED: "Product type deleted successfully",
   },
 
   ERROR: {
@@ -68,5 +72,9 @@ export const MESSAGES = {
     SUPPLIER_UPDATE_FAILED: "Failed to update supplier.",
     SUPPLIER_NOT_FOUND: "Supplier not found.",
     SALE_ORDER_ADD_FAILED: "Failed to add sale order.",
+    PRODUCT_TYPE_NOT_FOUND: "Product type not found",
+    PRODUCT_TYPE_INACTIVE: "This product type is not active.",
+    PRODUCT_TYPE_ALREADY_EXISTS: "Product type already exists",
+    PRODUCT_TYPE_CREATE_FAILED: "Failed to create product type",
   },
 };

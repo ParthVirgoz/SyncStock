@@ -8,6 +8,7 @@ import {
   startProductionOrder,
 } from '../api/production'
 import { getProducts } from '../api/products'
+import { getProductTypes } from '../api/productTypes'
 import PageHeader from '../components/ui/PageHeader'
 import DataTable from '../components/ui/DataTable'
 import FilterBar, { FilterItem } from '../components/ui/FilterBar'
@@ -19,6 +20,10 @@ import MaterialRows from '../components/ui/MaterialRows'
 import StatusBadge from '../components/ui/StatusBadge'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import { PRODUCTION_STATUS } from '../constants/enums'
+import {
+  getProductTypeName,
+  matchProductTypeNames,
+} from '../utils/productTypeHelpers'
 import {
   hasErrors,
   validateProductionCompleteForm,
@@ -66,6 +71,7 @@ export default function ProductionOrdersPage() {
   const [completeErrors, setCompleteErrors] = useState({})
   const [saving, setSaving] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
+  const [productTypes, setProductTypes] = useState([])
 
   const fetchOrders = useCallback(async () => {
     setLoading(true)
@@ -81,12 +87,14 @@ export default function ProductionOrdersPage() {
 
   const fetchOptions = useCallback(async () => {
     try {
-      const [productData, locationData] = await Promise.all([
+      const [productData, locationData, productTypeData] = await Promise.all([
         getProducts({ limit: 100 }),
         getLocations({ isActive: true }),
+        getProductTypes(),
       ])
       setProducts(Array.isArray(productData) ? productData : [])
       setLocations(Array.isArray(locationData) ? locationData : [])
+      setProductTypes(Array.isArray(productTypeData) ? productTypeData : [])
     } catch (error) {
       toast.error('Failed to load form options', { description: error.message })
     }
@@ -98,23 +106,29 @@ export default function ProductionOrdersPage() {
   }, [fetchOrders, fetchOptions])
 
   const outputProducts = useMemo(
-    () => products.filter((product) => ['FINISHED', 'SEMI'].includes(product.type)),
-    [products],
+    () =>
+      products.filter((product) =>
+        matchProductTypeNames(product, ['FINISHED', 'SEMI'], productTypes),
+      ),
+    [products, productTypes],
   )
 
   const materialProducts = useMemo(
-    () => products.filter((product) => ['RAW', 'SEMI'].includes(product.type)),
-    [products],
+    () =>
+      products.filter((product) =>
+        matchProductTypeNames(product, ['RAW', 'SEMI'], productTypes),
+      ),
+    [products, productTypes],
   )
 
   const outputProductOptions = outputProducts.map((product) => ({
     value: product._id,
-    label: `${product.name} (${product.sku})`,
+    label: `${product.name} (${getProductTypeName(product, productTypes)})`,
   }))
 
   const materialProductOptions = materialProducts.map((product) => ({
     value: product._id,
-    label: `${product.name} (${product.sku})`,
+    label: `${product.name} (${getProductTypeName(product, productTypes)})`,
   }))
 
   const locationOptions = locations.map((location) => ({

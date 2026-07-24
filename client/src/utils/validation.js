@@ -3,6 +3,7 @@ export function hasErrors(errors) {
 }
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const OBJECT_ID_HEX_PATTERN = /^[a-f0-9]{24}$/i
 
 export function validateLoginForm(form) {
   const errors = {}
@@ -29,12 +30,30 @@ export function validateCategoryForm(form) {
     errors.name = 'Name must be at least 2 characters'
   }
 
-  if (!form.type) {
-    errors.type = 'Type is required'
+  if (!form.typeId) {
+    errors.typeId = 'Product type is required'
+  } else if (!OBJECT_ID_HEX_PATTERN.test(form.typeId)) {
+    errors.typeId = 'Invalid product type'
   }
 
   if (form.description && form.description.length > 500) {
     errors.description = 'Description must be less than 500 characters'
+  }
+
+  return errors
+}
+
+export function validateProductTypeForm(form) {
+  const errors = {}
+
+  if (!form.name?.trim() || form.name.trim().length < 2) {
+    errors.name = 'Name must be at least 2 characters'
+  } else if (form.name.trim().length > 50) {
+    errors.name = 'Name must be less than 50 characters'
+  }
+
+  if (form.description && form.description.length > 255) {
+    errors.description = 'Description must be less than 255 characters'
   }
 
   return errors
@@ -66,10 +85,6 @@ export function validateProductForm(form) {
 
   if (!form.name?.trim() || form.name.trim().length < 2) {
     errors.name = 'Name must be at least 2 characters'
-  }
-
-  if (!form.type) {
-    errors.type = 'Type is required'
   }
 
   if (!form.unit) {
